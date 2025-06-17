@@ -1,0 +1,652 @@
+{% extends "base.html" %}
+
+{% block title %}Analiz Sonuçları - Veri Analizi Platformu{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-chart-bar me-2"></i>Analiz Sonuçları</h2>
+            <div>
+                <a href="{{ url_for('select_analysis') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-arrow-left me-2"></i>Analiz Seçimi
+                </a>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-home me-2"></i>Ana Sayfa
+                </a>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Yazdır
+                </button>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>Dosya:</strong> {{ filename }}<br>
+            <strong>Yapılan Analizler:</strong>
+            {% for analysis in selected_analyses %}
+                <span class="badge bg-primary me-1">{{ detailed_analyses[analysis].title if analysis in detailed_analyses else analysis }}</span>
+            {% endfor %}
+            <br>
+            <strong>Sütun Bilgisi:</strong>
+            <span class="badge bg-success">{{ numerical_cols|length }} Sayısal</span>
+            <span class="badge bg-warning">{{ categorical_cols|length }} Kategorik</span>
+        </div>
+
+        <!-- Temel Bilgiler -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Temel Bilgiler</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ basic_analysis.basic_info.total_rows }}</h4>
+                            <small>Toplam Satır</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-success">{{ basic_analysis.basic_info.total_columns }}</h4>
+                            <small>Toplam Sütun</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-warning">{{ basic_analysis.missing_values.total_missing }}</h4>
+                            <small>Eksik Değer</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-info">{{ "%.1f"|format(basic_analysis.basic_info.memory_usage / 1024) }} KB</h4>
+                            <small>Bellek Kullanımı</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Gelişmiş Veri Önizleme - Kaydırılabilir -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Veri Önizleme</h5>
+            </div>
+            <div class="card-body p-0">
+                <div class="table-container">
+                    {{ data_preview|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Görselleştirme Merkezi - SÜTUN SEÇİMİ İLE -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Görselleştirme Merkezi</h5>
+            </div>
+            <div class="card-body">
+                <!-- Sütun Seçimi -->
+                <div class="column-selection">
+                    <h6><i class="fas fa-columns me-2"></i>Sütun Seçimi</h6>
+                    <div class="row">
+                        <div class="col-md-4">
+                            <label for="xColumnSelect" class="form-label">X Ekseni / Ana Sütun</label>
+                            <select class="form-select" id="xColumnSelect">
+                                <option value="">Otomatik Seç</option>
+                                {% if numerical_cols %}
+                                    <optgroup label="Sayısal Sütunlar">
+                                        {% for col in numerical_cols %}
+                                            <option value="{{ col }}">{{ col }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endif %}
+                                {% if categorical_cols %}
+                                    <optgroup label="Kategorik Sütunlar">
+                                        {% for col in categorical_cols %}
+                                            <option value="{{ col }}">{{ col }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endif %}
+                            </select>
+                        </div>
+                        <div class="col-md-4">
+                            <label for="yColumnSelect" class="form-label">Y Ekseni (Scatter/Line için)</label>
+                            <select class="form-select" id="yColumnSelect">
+                                <option value="">Otomatik Seç</option>
+                                {% if numerical_cols %}
+                                    <optgroup label="Sayısal Sütunlar">
+                                        {% for col in numerical_cols %}
+                                            <option value="{{ col }}">{{ col }}</option>
+                                        {% endfor %}
+                                    </optgroup>
+                                {% endif %}
+                            </select>
+                        </div>
+
+
+                    <!-- Sütun Bilgisi -->
+                    <div class="row mt-3">
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <strong>Mevcut Sayısal Sütunlar:</strong>
+                                {% if numerical_cols %}
+                                    {% for col in numerical_cols %}
+                                        <span class="badge bg-success me-1">{{ col }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-warning">Sayısal sütun bulunamadı</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                        <div class="col-md-6">
+                            <small class="text-muted">
+                                <strong>Mevcut Kategorik Sütunlar:</strong>
+                                {% if categorical_cols %}
+                                    {% for col in categorical_cols %}
+                                        <span class="badge bg-warning me-1">{{ col }}</span>
+                                    {% endfor %}
+                                {% else %}
+                                    <span class="text-warning">Kategorik sütun bulunamadı</span>
+                                {% endif %}
+                            </small>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Grafik Türü Seçimi -->
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="btn-group flex-wrap" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('histogram')">
+                                <i class="fas fa-chart-bar me-1"></i>Histogram
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('scatter')">
+                                <i class="fas fa-braille me-1"></i>Scatter Plot
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('line')">
+                                <i class="fas fa-chart-line me-1"></i>Line Plot
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('bar')">
+                                <i class="fas fa-chart-bar me-1"></i>Bar Chart
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('pie')">
+                                <i class="fas fa-chart-pie me-1"></i>Pie Chart
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('box')">
+                                <i class="fas fa-square me-1"></i>Box Plot
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadMainChart('heatmap')">
+                                <i class="fas fa-fire me-1"></i>Heatmap
+                            </button>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Ana Grafik Konteyneri -->
+                <div id="mainChartContainer" class="chart-container">
+                    <div class="text-center py-5" id="mainChartPlaceholder">
+                        <i class="fas fa-chart-bar fa-4x mb-3 pulse-icon"></i>
+                        <h5>Görselleştirme Merkezi</h5>
+                        <p class="text-muted">Sütunları seçin ve yukarıdaki butonlardan bir grafik türü seçin</p>
+                        <div class="mt-3">
+                            <small class="text-info">
+                                📊 Toplam Sütun: {{ (numerical_cols|length) + (categorical_cols|length) }} |
+                                🔢 Sayısal: {{ numerical_cols|length }} |
+                                📝 Kategorik: {{ categorical_cols|length }}
+                            </small>
+                        </div>
+                        {% if not numerical_cols and not categorical_cols %}
+                            <div class="alert alert-warning mt-3">
+                                <i class="fas fa-exclamation-triangle me-2"></i>
+                                Sütun bilgisi bulunamadı. Lütfen sayfayı yenileyin.
+                            </div>
+                        {% endif %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Detaylı Analiz Sonuçları -->
+        {% for analysis_type, analysis_result in detailed_analyses.items() %}
+        {% if 'error' not in analysis_result %}
+        <div class="card mb-4 analysis-result-card" data-analysis="{{ analysis_type }}">
+            <div class="card-header d-flex justify-content-between align-items-center">
+                <h5 class="mb-0">
+                    <i class="fas fa-chart-line me-2"></i>{{ analysis_result.title }}
+                </h5>
+                <button class="btn btn-sm btn-outline-primary" onclick="toggleAnalysisDetails('{{ analysis_type }}')">
+                    <i class="fas fa-eye" id="toggle-icon-{{ analysis_type }}"></i>
+                </button>
+            </div>
+            <div class="card-body" id="analysis-details-{{ analysis_type }}">
+
+                <!-- Tanımlayıcı İstatistikler -->
+                {% if analysis_type == 'descriptive' %}
+                    {% if analysis_result.numerical_summary %}
+                    <h6>Sayısal Değişkenler</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Değişken</th>
+                                    <th>Ortalama</th>
+                                    <th>Medyan</th>
+                                    <th>Std. Sapma</th>
+                                    <th>Çarpıklık</th>
+                                    <th>Basıklık</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for var, stats in analysis_result.numerical_summary.items() %}
+                                <tr>
+                                    <td><strong>{{ var }}</strong></td>
+                                    <td>{{ "%.2f"|format(stats.mean) }}</td>
+                                    <td>{{ "%.2f"|format(stats.median) }}</td>
+                                    <td>{{ "%.2f"|format(stats.std) }}</td>
+                                    <td>{{ "%.2f"|format(stats.skewness) }}</td>
+                                    <td>{{ "%.2f"|format(stats.kurtosis) }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+
+                    {% if analysis_result.categorical_summary %}
+                    <h6>Kategorik Değişkenler</h6>
+                    <div class="row">
+                        {% for var, stats in analysis_result.categorical_summary.items() %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ var }}</h6>
+                                    <p class="card-text">
+                                        <strong>Benzersiz Değer:</strong> {{ stats.unique_count }}<br>
+                                        <strong>En Sık:</strong> {{ stats.most_frequent }} ({{ stats.most_frequent_count }} kez)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Korelasyon Analizi -->
+                {% if analysis_type == 'correlation' %}
+                    {% if analysis_result.high_correlations %}
+                    <h6>Yüksek Korelasyonlar</h6>
+                    <div class="table-responsive mb-4">
+                        <table class="table table-striped">
+                            <thead>
+                                <tr>
+                                    <th>Değişken 1</th>
+                                    <th>Değişken 2</th>
+                                    <th>Korelasyon</th>
+                                    <th>Güç</th>
+                                </tr>
+                            </thead>
+                            <tbody>
+                                {% for corr in analysis_result.high_correlations %}
+                                <tr>
+                                    <td>{{ corr.var1 }}</td>
+                                    <td>{{ corr.var2 }}</td>
+                                    <td>
+                                        <span class="badge {% if corr.correlation > 0 %}bg-success{% else %}bg-danger{% endif %}">
+                                            {{ "%.3f"|format(corr.correlation) }}
+                                        </span>
+                                    </td>
+                                    <td>{{ corr.strength }}</td>
+                                </tr>
+                                {% endfor %}
+                            </tbody>
+                        </table>
+                    </div>
+                    {% endif %}
+                {% endif %}
+
+                <!-- Aykırı Değer Analizi -->
+                {% if analysis_type == 'outlier' %}
+                    <div class="row">
+                        {% for var, stats in analysis_result.outlier_results.items() %}
+                        <div class="col-md-6 mb-3">
+                            <div class="card">
+                                <div class="card-body">
+                                    <h6 class="card-title">{{ var }}</h6>
+                                    <p class="card-text">
+                                        <strong>IQR Aykırı Değer:</strong> {{ stats.iqr_outliers }} ({{ "%.1f"|format(stats.iqr_percentage) }}%)<br>
+                                        <strong>Z-Score Aykırı Değer:</strong> {{ stats.z_outliers }} ({{ "%.1f"|format(stats.z_percentage) }}%)
+                                    </p>
+                                </div>
+                            </div>
+                        </div>
+                        {% endfor %}
+                    </div>
+                {% endif %}
+
+                <!-- Kümeleme Analizi -->
+                {% if analysis_type == 'clustering' %}
+                    <div class="row mb-4">
+                        <div class="col-md-6">
+                            <h6>Optimal Küme Sayısı: {{ analysis_result.optimal_k }}</h6>
+                            <div class="table-responsive">
+                                <table class="table table-striped">
+                                    <thead>
+                                        <tr>
+                                            <th>Küme</th>
+                                            <th>Boyut</th>
+                                            <th>Yüzde</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody>
+                                        {% for cluster, stats in analysis_result.cluster_stats.items() %}
+                                        <tr>
+                                            <td>{{ cluster }}</td>
+                                            <td>{{ stats.size }}</td>
+                                            <td>{{ "%.1f"|format(stats.percentage) }}%</td>
+                                        </tr>
+                                        {% endfor %}
+                                    </tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
+                {% endif %}
+
+                <!-- Görselleştirme Butonları -->
+                {% if 'visualizations' in analysis_result %}
+                <div class="mt-4">
+                    <h6>Önerilen Görselleştirmeler</h6>
+                    <div class="btn-group flex-wrap mb-3" role="group">
+                        {% for viz_type in analysis_result.visualizations %}
+                        <button type="button" class="btn btn-outline-primary"
+                                onclick="loadAnalysisChart('{{ viz_type }}', '{{ analysis_type }}')">
+                            <i class="fas fa-{% if viz_type == 'histogram' %}chart-bar{% elif viz_type == 'scatter' %}braille{% elif viz_type == 'line' %}chart-line{% elif viz_type == 'bar' %}chart-bar{% elif viz_type == 'pie' %}chart-pie{% elif viz_type == 'box' %}square{% elif viz_type == 'heatmap' %}fire{% endif %} me-1"></i>
+                            {% if viz_type == 'histogram' %}Histogram{% elif viz_type == 'scatter' %}Scatter Plot{% elif viz_type == 'line' %}Line Plot{% elif viz_type == 'bar' %}Bar Chart{% elif viz_type == 'pie' %}Pie Chart{% elif viz_type == 'box' %}Box Plot{% elif viz_type == 'heatmap' %}Heatmap{% endif %}
+                        </button>
+                        {% endfor %}
+                    </div>
+                    <div id="chartContainer-{{ analysis_type }}" class="chart-container">
+                        <div class="text-center py-5">
+                            <i class="fas fa-chart-bar fa-4x mb-3 pulse-icon"></i>
+                            <h6>{{ analysis_result.title }} Görselleştirmesi</h6>
+                            <p class="text-muted">Yukarıdaki butonlardan bir görselleştirme türü seçin</p>
+                        </div>
+                    </div>
+                </div>
+                {% endif %}
+            </div>
+        </div>
+        {% endif %}
+        {% endfor %}
+    </div>
+</div>
+
+<script>
+// Store data when page loads
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        console.log('=== PAGE LOADED ===');
+        const dataJson = `{{ data_json|safe }}`;
+        console.log('Data JSON length:', dataJson ? dataJson.length : 'null');
+
+        // Store column information
+        window.numericalCols = {{ numerical_cols|tojson }};
+        window.categoricalCols = {{ categorical_cols|tojson }};
+
+        console.log('📋 Columns stored:');
+        console.log('   - Numerical:', window.numericalCols);
+        console.log('   - Categorical:', window.categoricalCols);
+
+        if (dataJson && dataJson !== 'None' && dataJson !== 'null' && dataJson.trim() !== '') {
+            storeAnalysisData(dataJson);
+            console.log('✅ Analysis data stored successfully');
+
+            // Test Plotly availability
+            if (typeof Plotly !== 'undefined') {
+                console.log('✅ Plotly is available:', Plotly.version);
+            } else {
+                console.error('❌ Plotly is not loaded!');
+            }
+        } else {
+            console.error('❌ No valid data received from template');
+        }
+    } catch (error) {
+        console.error('❌ Error in data loading:', error);
+    }
+});
+
+function toggleAnalysisDetails(analysisType) {
+    const details = document.getElementById(`analysis-details-${analysisType}`);
+    const icon = document.getElementById(`toggle-icon-${analysisType}`);
+
+    if (details.style.display === 'none') {
+        details.style.display = 'block';
+        icon.className = 'fas fa-eye';
+    } else {
+        details.style.display = 'none';
+        icon.className = 'fas fa-eye-slash';
+    }
+}
+
+// Ana grafik yükleme fonksiyonu - SÜTUN SEÇİMİ İLE
+function loadMainChart(chartType) {
+    console.log('=== LOADING MAIN CHART ===');
+    console.log('📊 Chart type:', chartType);
+
+    const container = document.getElementById('mainChartContainer');
+    const buttons = document.querySelectorAll('.btn-group .btn');
+
+    // Update button states
+    buttons.forEach(btn => btn.classList.remove('active'));
+    event.target.classList.add('active');
+
+    // Get selected columns
+    const selectedColumns = {
+        x_column: document.getElementById('xColumnSelect').value || null,
+        y_column: document.getElementById('yColumnSelect').value || null,
+        color_column: document.getElementById('colorColumnSelect').value || null
+    };
+
+    console.log('📝 Selected columns:', selectedColumns);
+    console.log('📋 Available columns:');
+    console.log('   - Numerical:', window.numericalCols);
+    console.log('   - Categorical:', window.categoricalCols);
+
+    // Show loading
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+            <p class="text-muted">Grafik oluşturuluyor...</p>
+            <small class="text-info">Chart: ${chartType} | X: ${selectedColumns.x_column || 'auto'} | Y: ${selectedColumns.y_column || 'auto'} | Color: ${selectedColumns.color_column || 'none'}</small>
+        </div>
+    `;
+
+    // Check if we have analysis data
+    if (!analysisData || analysisData.length === 0) {
+        console.error('❌ No analysis data available');
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Veri bulunamadı. Lütfen sayfayı yenileyin.
+            </div>
+        `;
+        return;
+    }
+
+    // Check Plotly availability
+    if (typeof Plotly === 'undefined') {
+        console.error('❌ Plotly not available');
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Plotly kütüphanesi yüklenemedi. Lütfen sayfayı yenileyin.
+            </div>
+        `;
+        return;
+    }
+
+    console.log('🚀 Sending visualization request...');
+
+    // Send data to server for visualization
+    fetch('/visualize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            chart_type: chartType,
+            data: analysisData,
+            analysis_context: {
+                analysis_type: 'main',
+                title: `Ana Görselleştirme - ${chartType}`,
+            },
+            selected_columns: selectedColumns
+        }),
+    })
+    .then(response => {
+        console.log('📡 Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('✅ Visualization response received');
+        if (data.error) {
+            console.error('❌ Server error:', data.error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.error}
+                </div>
+            `;
+        } else {
+            console.log('🎉 Chart loaded successfully');
+            container.innerHTML = data.chart_html;
+
+            // Force Plotly to render if needed
+            setTimeout(() => {
+                if (typeof Plotly !== 'undefined') {
+                    const plotlyDivs = container.querySelectorAll('[id^="plotly-div"]');
+                    plotlyDivs.forEach(div => {
+                        if (div && div.data) {
+                            Plotly.redraw(div);
+                        }
+                    });
+                }
+            }, 100);
+        }
+    })
+    .catch(error => {
+        console.error('❌ Chart loading error:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Grafik yüklenirken hata oluştu: ${error.message}
+            </div>
+        `;
+    });
+}
+
+function loadAnalysisChart(chartType, analysisType) {
+    console.log('Loading analysis chart:', chartType, 'for analysis:', analysisType);
+
+    const container = document.getElementById(`chartContainer-${analysisType}`);
+    if (!container) {
+        console.error('Chart container not found:', `chartContainer-${analysisType}`);
+        return;
+    }
+
+    const buttons = container.parentElement.querySelectorAll('.btn-group .btn');
+
+    // Update button states
+    buttons.forEach(btn => btn.classList.remove('active'));
+    if (event && event.target) {
+        event.target.classList.add('active');
+    }
+
+    // Show loading
+    container.innerHTML = `
+        <div class="text-center py-5">
+            <i class="fas fa-spinner fa-spin fa-3x mb-3"></i>
+            <p class="text-muted">Grafik oluşturuluyor...</p>
+            <small class="text-info">Chart: ${chartType} | Analysis: ${analysisType}</small>
+        </div>
+    `;
+
+    // Check if we have analysis data
+    if (!analysisData || analysisData.length === 0) {
+        console.error('No analysis data available');
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Veri bulunamadı. Lütfen sayfayı yenileyin.
+            </div>
+        `;
+        return;
+    }
+
+    console.log('Sending visualization request...');
+
+    // Send data to server for visualization with analysis context
+    fetch('/visualize', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+            chart_type: chartType,
+            data: analysisData,
+            analysis_context: {
+                analysis_type: analysisType,
+                title: `${analysisType} - ${chartType}`,
+            },
+        }),
+    })
+    .then(response => {
+        console.log('Response status:', response.status);
+        if (!response.ok) {
+            throw new Error(`HTTP error! status: ${response.status}`);
+        }
+        return response.json();
+    })
+    .then(data => {
+        console.log('Visualization response received');
+        if (data.error) {
+            console.error('Server error:', data.error);
+            container.innerHTML = `
+                <div class="alert alert-danger">
+                    <i class="fas fa-exclamation-triangle me-2"></i>
+                    ${data.error}
+                </div>
+            `;
+        } else {
+            console.log('Chart loaded successfully');
+            container.innerHTML = data.chart_html;
+
+            // Force Plotly to render if needed
+            setTimeout(() => {
+                if (typeof Plotly !== 'undefined') {
+                    const plotlyDivs = container.querySelectorAll('[id^="plotly-div"]');
+                    plotlyDivs.forEach(div => {
+                        if (div && div.data) {
+                            Plotly.redraw(div);
+                        }
+                    });
+                }
+            }, 100);
+        }
+    })
+    .catch(error => {
+        console.error('Chart loading error:', error);
+        container.innerHTML = `
+            <div class="alert alert-danger">
+                <i class="fas fa-exclamation-triangle me-2"></i>
+                Grafik yüklenirken hata oluştu: ${error.message}
+            </div>
+        `;
+    });
+}
+</script>
+{% endblock %}

@@ -1,0 +1,221 @@
+{% extends "base.html" %}
+
+{% block title %}Analiz Sonuçları - Veri Analizi Platformu{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-12">
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <h2><i class="fas fa-chart-bar me-2"></i>Analiz Sonuçları</h2>
+            <div>
+                <a href="{{ url_for('index') }}" class="btn btn-secondary me-2">
+                    <i class="fas fa-home me-2"></i>Ana Sayfa
+                </a>
+                <button class="btn btn-primary" onclick="window.print()">
+                    <i class="fas fa-print me-2"></i>Yazdır
+                </button>
+            </div>
+        </div>
+
+        <div class="alert alert-info">
+            <strong>Dosya:</strong> {{ filename }}
+        </div>
+
+        <!-- Temel Bilgiler -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-info-circle me-2"></i>Temel Bilgiler</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-primary">{{ analysis.basic_info.total_rows }}</h4>
+                            <small>Toplam Satır</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-success">{{ analysis.basic_info.total_columns }}</h4>
+                            <small>Toplam Sütun</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-warning">{{ analysis.missing_values.total_missing }}</h4>
+                            <small>Eksik Değer</small>
+                        </div>
+                    </div>
+                    <div class="col-md-3">
+                        <div class="text-center">
+                            <h4 class="text-info">{{ "%.1f"|format(analysis.basic_info.memory_usage / 1024) }} KB</h4>
+                            <small>Bellek Kullanımı</small>
+                        </div>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Veri Önizleme -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-table me-2"></i>Veri Önizleme</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    {{ data_preview|safe }}
+                </div>
+            </div>
+        </div>
+
+        <!-- Sütun Bilgileri -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-columns me-2"></i>Sütun Bilgileri</h5>
+            </div>
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-4">
+                        <h6>Sayısal Sütunlar</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for col in analysis.data_types.numerical_columns %}
+                                <li class="list-group-item d-flex justify-content-between">
+                                    {{ col }}
+                                    <span class="badge bg-primary">{{ analysis.data_types.dtypes[col] }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Kategorik Sütunlar</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for col in analysis.data_types.categorical_columns %}
+                                <li class="list-group-item d-flex justify-content-between">
+                                    {{ col }}
+                                    <span class="badge bg-success">{{ analysis.data_types.dtypes[col] }}</span>
+                                </li>
+                            {% endfor %}
+                        </ul>
+                    </div>
+                    <div class="col-md-4">
+                        <h6>Eksik Değerler</h6>
+                        <ul class="list-group list-group-flush">
+                            {% for col, count in analysis.missing_values.missing_count.items() %}
+                                {% if count > 0 %}
+                                    <li class="list-group-item d-flex justify-content-between">
+                                        {{ col }}
+                                        <span class="badge bg-warning">{{ count }} ({{ "%.1f"|format(analysis.missing_values.missing_percentage[col]) }}%)</span>
+                                    </li>
+                                {% endif %}
+                            {% endfor %}
+                        </ul>
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- İstatistiksel Özet -->
+        {% if analysis.statistical_summary %}
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-calculator me-2"></i>İstatistiksel Özet</h5>
+            </div>
+            <div class="card-body">
+                <div class="table-responsive">
+                    <table class="table table-striped">
+                        <thead>
+                            <tr>
+                                <th>Sütun</th>
+                                <th>Ortalama</th>
+                                <th>Std. Sapma</th>
+                                <th>Min</th>
+                                <th>%25</th>
+                                <th>%50 (Medyan)</th>
+                                <th>%75</th>
+                                <th>Max</th>
+                            </tr>
+                        </thead>
+                        <tbody>
+                            {% for col, stats in analysis.statistical_summary.items() %}
+                            <tr>
+                                <td><strong>{{ col }}</strong></td>
+                                <td>{{ "%.2f"|format(stats.mean) }}</td>
+                                <td>{{ "%.2f"|format(stats.std) }}</td>
+                                <td>{{ "%.2f"|format(stats.min) }}</td>
+                                <td>{{ "%.2f"|format(stats['25%']) }}</td>
+                                <td>{{ "%.2f"|format(stats['50%']) }}</td>
+                                <td>{{ "%.2f"|format(stats['75%']) }}</td>
+                                <td>{{ "%.2f"|format(stats.max) }}</td>
+                            </tr>
+                            {% endfor %}
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+        </div>
+        {% endif %}
+
+        <!-- Görselleştirme Seçenekleri -->
+        <div class="card mb-4">
+            <div class="card-header">
+                <h5 class="mb-0"><i class="fas fa-chart-pie me-2"></i>Görselleştirme</h5>
+            </div>
+            <div class="card-body">
+                <div class="row mb-3">
+                    <div class="col-md-12">
+                        <div class="btn-group flex-wrap" role="group">
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('histogram')">
+                                <i class="fas fa-chart-bar me-1"></i>Histogram
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('scatter')">
+                                <i class="fas fa-braille me-1"></i>Scatter Plot
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('line')">
+                                <i class="fas fa-chart-line me-1"></i>Line Plot
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('bar')">
+                                <i class="fas fa-chart-bar me-1"></i>Bar Chart
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('pie')">
+                                <i class="fas fa-chart-pie me-1"></i>Pie Chart
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('box')">
+                                <i class="fas fa-square me-1"></i>Box Plot
+                            </button>
+                            <button type="button" class="btn btn-outline-primary" onclick="loadChart('heatmap')">
+                                <i class="fas fa-fire me-1"></i>Heatmap
+                            </button>
+                        </div>
+                    </div>
+                </div>
+                <div id="chartContainer" class="chart-container">
+                    <div class="text-center py-5" id="chartPlaceholder">
+                        <i class="fas fa-chart-bar fa-4x mb-3 pulse-icon"></i>
+                        <h5>Görselleştirme Merkezi</h5>
+                        <p class="text-muted">Verilerinizi görselleştirmek için yukarıdaki butonlardan birini seçin</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script>
+// Store data when page loads with better error handling
+document.addEventListener('DOMContentLoaded', function() {
+    try {
+        const dataJson = `{{ data_json|safe }}`;
+        console.log('Raw data from template:', dataJson.substring(0, 100) + '...');
+
+        if (dataJson && dataJson !== 'None' && dataJson !== 'null' && dataJson.trim() !== '') {
+            storeAnalysisData(dataJson);
+            console.log('Data stored successfully');
+        } else {
+            console.error('No valid data received from template');
+        }
+    } catch (error) {
+        console.error('Error in data loading:', error);
+    }
+});
+</script>
+{% endblock %}

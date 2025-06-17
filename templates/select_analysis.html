@@ -1,0 +1,283 @@
+{% extends "base.html" %}
+
+{% block title %}Analiz Seçimi - Veri Analizi Platformu{% endblock %}
+
+{% block content %}
+<div class="row">
+    <div class="col-lg-10 mx-auto">
+        <!-- Veri Bilgileri - Kompakt -->
+        <div class="alert alert-info mb-3">
+            <div class="row align-items-center">
+                <div class="col-md-8">
+                    <strong><i class="fas fa-file me-1"></i>{{ filename }}</strong> -
+                    {{ data_info.rows }} satır × {{ data_info.columns }} sütun
+                    ({{ data_info.numerical_cols|length }} sayısal, {{ data_info.categorical_cols|length }} kategorik)
+                </div>
+                <div class="col-md-4 text-end">
+                    <button class="btn btn-sm btn-outline-info" onclick="toggleDataPreview()">
+                        <i class="fas fa-eye me-1"></i>Veri Önizleme
+                    </button>
+                </div>
+            </div>
+        </div>
+
+        <!-- Veri Önizleme - Gizlenebilir -->
+        <div class="card mb-3" id="dataPreview" style="display: none;">
+            <div class="card-body">
+                <div class="row">
+                    <div class="col-md-6">
+                        <h6>Sayısal Sütunlar</h6>
+                        {% for col in data_info.numerical_cols %}
+                            <span class="badge bg-primary me-1 mb-1">{{ col }}</span>
+                        {% endfor %}
+                    </div>
+                    <div class="col-md-6">
+                        <h6>Kategorik Sütunlar</h6>
+                        {% for col in data_info.categorical_cols %}
+                            <span class="badge bg-success me-1 mb-1">{{ col }}</span>
+                        {% endfor %}
+                    </div>
+                </div>
+            </div>
+        </div>
+
+        <!-- Ana Analiz Formu -->
+        <div class="card shadow">
+            <div class="card-header">
+                <h5 class="mb-0">
+                    <i class="fas fa-cogs me-2"></i>Analiz Türü Seçimi
+                </h5>
+            </div>
+            <div class="card-body">
+                <form method="POST" action="{{ url_for('perform_analysis') }}" id="analysisForm">
+
+                    <!-- Hızlı Seçim Butonları -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">
+                            <i class="fas fa-magic me-2"></i>Hızlı Seçim
+                        </h6>
+                        <div class="btn-group flex-wrap" role="group">
+                            <button type="button" class="btn btn-outline-primary btn-sm" onclick="selectRecommended(['descriptive'])">
+                                <i class="fas fa-chart-bar me-1"></i>Temel
+                            </button>
+                            <button type="button" class="btn btn-outline-success btn-sm" onclick="selectRecommended(['descriptive', 'correlation'])">
+                                <i class="fas fa-project-diagram me-1"></i>Başlangıç
+                            </button>
+                            <button type="button" class="btn btn-outline-warning btn-sm" onclick="selectRecommended(['descriptive', 'correlation', 'distribution', 'outlier'])">
+                                <i class="fas fa-chart-line me-1"></i>Gelişmiş
+                            </button>
+                            <button type="button" class="btn btn-outline-info btn-sm" onclick="selectRecommended(['clustering', 'pca', 'outlier'])">
+                                <i class="fas fa-robot me-1"></i>ML Hazırlık
+                            </button>
+                            <button type="button" class="btn btn-outline-secondary btn-sm" onclick="selectAll()">
+                                <i class="fas fa-check-double me-1"></i>Tümü
+                            </button>
+                            <button type="button" class="btn btn-outline-danger btn-sm" onclick="clearAll()">
+                                <i class="fas fa-times me-1"></i>Temizle
+                            </button>
+                        </div>
+                    </div>
+
+                    <!-- Kompakt Analiz Seçenekleri - Checkbox sol üstte -->
+                    <div class="mb-4">
+                        <h6 class="mb-3">
+                            <i class="fas fa-list-check me-2"></i>Detaylı Seçim
+                        </h6>
+                        <div class="row g-2">
+                            {% for analysis_id, analysis_name in available_analyses.items() %}
+                            <div class="col-md-6 col-lg-3">
+                                <div class="analysis-option position-relative" data-analysis="{{ analysis_id }}">
+                                    <input class="form-check-input position-absolute analysis-checkbox" type="checkbox"
+                                           name="analyses" value="{{ analysis_id }}"
+                                           id="analysis_{{ analysis_id }}">
+                                    <label class="form-check-label w-100 h-100 d-block p-3" for="analysis_{{ analysis_id }}">
+                                        <div class="d-flex align-items-center">
+                                            <div class="analysis-icon me-2">
+                                                {% if analysis_id == 'descriptive' %}
+                                                    <i class="fas fa-chart-bar text-primary"></i>
+                                                {% elif analysis_id == 'correlation' %}
+                                                    <i class="fas fa-project-diagram text-success"></i>
+                                                {% elif analysis_id == 'distribution' %}
+                                                    <i class="fas fa-bell-curve text-warning"></i>
+                                                {% elif analysis_id == 'outlier' %}
+                                                    <i class="fas fa-exclamation-triangle text-danger"></i>
+                                                {% elif analysis_id == 'clustering' %}
+                                                    <i class="fas fa-sitemap text-info"></i>
+                                                {% elif analysis_id == 'pca' %}
+                                                    <i class="fas fa-compress-arrows-alt text-purple"></i>
+                                                {% elif analysis_id == 'trend' %}
+                                                    <i class="fas fa-chart-line text-success"></i>
+                                                {% elif analysis_id == 'comparison' %}
+                                                    <i class="fas fa-balance-scale text-info"></i>
+                                                {% endif %}
+                                            </div>
+                                            <div>
+                                                <div class="fw-bold">{{ analysis_name }}</div>
+                                                <small class="text-muted">
+                                                    {% if analysis_id == 'descriptive' %}
+                                                        Temel istatistikler
+                                                    {% elif analysis_id == 'correlation' %}
+                                                        Değişken ilişkileri
+                                                    {% elif analysis_id == 'distribution' %}
+                                                        Dağılım özellikleri
+                                                    {% elif analysis_id == 'outlier' %}
+                                                        Aykırı değer tespiti
+                                                    {% elif analysis_id == 'clustering' %}
+                                                        Veri gruplandırma
+                                                    {% elif analysis_id == 'pca' %}
+                                                        Boyut azaltma
+                                                    {% elif analysis_id == 'trend' %}
+                                                        Trend analizi
+                                                    {% elif analysis_id == 'comparison' %}
+                                                        Grup karşılaştırma
+                                                    {% endif %}
+                                                </small>
+                                            </div>
+                                        </div>
+                                    </label>
+                                </div>
+                            </div>
+                            {% endfor %}
+                        </div>
+                    </div>
+
+                    <!-- Form Butonları -->
+                    <div class="d-flex justify-content-between">
+                        <a href="{{ url_for('index') }}" class="btn btn-secondary">
+                            <i class="fas fa-arrow-left me-2"></i>Ana Sayfa
+                        </a>
+                        <button type="submit" class="btn btn-primary" id="submitBtn">
+                            <i class="fas fa-play me-2"></i>Analizleri Başlat
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+</div>
+
+<style>
+.analysis-option {
+    border: 1px solid var(--current-border-color);
+    border-radius: 8px;
+    transition: all 0.2s ease;
+    cursor: pointer;
+    height: 100%;
+    min-height: 80px;
+}
+
+.analysis-checkbox {
+    top: 8px;
+    left: 8px;
+    z-index: 10;
+}
+
+.analysis-option:hover {
+    background: var(--current-bg-tertiary);
+    border-color: var(--current-text-primary);
+    transform: translateY(-2px);
+}
+
+.dark-theme .analysis-option:hover {
+    background: var(--dark-bg-tertiary);
+    border-color: #00FFFF;
+    box-shadow: 0 0 10px rgba(0, 255, 255, 0.2);
+}
+
+.analysis-option:has(input[type="checkbox"]:checked) {
+    border-color: #0d6efd;
+    background: rgba(13, 110, 253, 0.1);
+    border-width: 2px;
+}
+
+.dark-theme .analysis-option:has(input[type="checkbox"]:checked) {
+    border-color: #00FFFF;
+    background: rgba(0, 255, 255, 0.1);
+    box-shadow: 0 0 15px rgba(0, 255, 255, 0.3);
+}
+
+.btn-group .btn {
+    margin-right: 0.25rem;
+    margin-bottom: 0.25rem;
+}
+
+.analysis-icon {
+    width: 20px;
+    text-align: center;
+}
+
+.form-check-input:checked {
+    background-color: #0d6efd;
+    border-color: #0d6efd;
+}
+
+.dark-theme .form-check-input:checked {
+    background-color: #00FFFF;
+    border-color: #00FFFF;
+}
+</style>
+
+<script>
+function toggleDataPreview() {
+    const preview = document.getElementById('dataPreview');
+    const button = event.target;
+
+    if (preview.style.display === 'none') {
+        preview.style.display = 'block';
+        button.innerHTML = '<i class="fas fa-eye-slash me-1"></i>Gizle';
+    } else {
+        preview.style.display = 'none';
+        button.innerHTML = '<i class="fas fa-eye me-1"></i>Veri Önizleme';
+    }
+}
+
+function selectAll() {
+    const checkboxes = document.querySelectorAll('input[name="analyses"]');
+    checkboxes.forEach(checkbox => checkbox.checked = true);
+}
+
+function clearAll() {
+    const checkboxes = document.querySelectorAll('input[name="analyses"]');
+    checkboxes.forEach(checkbox => checkbox.checked = false);
+}
+
+function selectRecommended(analyses) {
+    clearAll();
+    analyses.forEach(analysis => {
+        const checkbox = document.getElementById(`analysis_${analysis}`);
+        if (checkbox) checkbox.checked = true;
+    });
+}
+
+// Form validation
+document.getElementById('analysisForm').addEventListener('submit', function(e) {
+    const checkboxes = document.querySelectorAll('input[name="analyses"]:checked');
+    if (checkboxes.length === 0) {
+        e.preventDefault();
+        showAlert('En az bir analiz türü seçmelisiniz!', 'warning');
+        return false;
+    }
+
+    const submitBtn = document.getElementById('submitBtn');
+    submitBtn.innerHTML = '<i class="fas fa-spinner fa-spin me-2"></i>Analizler Başlatılıyor...';
+    submitBtn.disabled = true;
+});
+
+// Option click to toggle checkbox - herhangi bir yere tıklayınca seçim
+document.querySelectorAll('.analysis-option').forEach(option => {
+    option.addEventListener('click', function(e) {
+        // Checkbox'a tıklanmışsa, varsayılan davranışı koru
+        if (e.target.type === 'checkbox') {
+            return;
+        }
+
+        // Diğer durumlarda checkbox'ı toggle et
+        const checkbox = this.querySelector('input[type="checkbox"]');
+        checkbox.checked = !checkbox.checked;
+
+        // Event'i tetikle
+        checkbox.dispatchEvent(new Event('change'));
+    });
+});
+</script>
+{% endblock %}

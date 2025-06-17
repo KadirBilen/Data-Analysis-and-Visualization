@@ -1,0 +1,113 @@
+{% extends "base.html" %} {% block title %}Manuel Veri Girişi - Veri Analizi
+Platformu{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-lg-10 mx-auto">
+    <div class="card shadow">
+      <div class="card-header bg-success text-white">
+        <h4 class="mb-0">
+          <i class="fas fa-keyboard me-2"></i>Manuel Veri Girişi
+        </h4>
+      </div>
+      <div class="card-body">
+        <form method="POST" id="manualForm">
+          <div class="mb-3">
+            <label for="data_format" class="form-label">Veri Formatı</label>
+            <select class="form-select" id="data_format" name="data_format">
+              <option value="csv">CSV</option>
+              <option value="json">JSON</option>
+            </select>
+          </div>
+
+          <div class="mb-4">
+            <label for="data_text" class="form-label">Veri İçeriği</label>
+            <textarea
+              class="form-control"
+              id="data_text"
+              name="data_text"
+              rows="15"
+              placeholder="Verilerinizi buraya yapıştırın..."
+              required
+            ></textarea>
+            <div class="form-text">
+              Seçilen formata uygun olarak verilerinizi girin
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+              <i class="fas fa-arrow-left me-2"></i>Geri
+            </a>
+            <button type="submit" class="btn btn-success">
+              <i class="fas fa-chart-line me-2"></i>Analiz Et
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">Format Örnekleri</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>CSV Format:</h6>
+              <button
+                class="btn btn-sm btn-outline-primary mb-2"
+                onclick="fillCSVExample()"
+              >
+                Örneği Kullan
+              </button>
+              <pre class="bg-light p-2 rounded"><code>isim,yaş,şehir,maaş
+Ali,25,İstanbul,5000
+Ayşe,30,Ankara,6000
+Mehmet,35,İzmir,7000
+Fatma,28,Bursa,5500</code></pre>
+            </div>
+            <div class="col-md-6">
+              <h6>JSON Format:</h6>
+              <button
+                class="btn btn-sm btn-outline-primary mb-2"
+                onclick="fillJSONExample()"
+              >
+                Örneği Kullan
+              </button>
+              <pre class="bg-light p-2 rounded"><code>[
+  {"isim": "Ali", "yaş": 25, "şehir": "İstanbul", "maaş": 5000},
+  {"isim": "Ayşe", "yaş": 30, "şehir": "Ankara", "maaş": 6000},
+  {"isim": "Mehmet", "yaş": 35, "şehir": "İzmir", "maaş": 7000}
+]</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<script>
+  function fillCSVExample() {
+    document.getElementById("data_format").value = "csv";
+    document.getElementById("data_text").value = `isim,yaş,şehir,maaş
+Ali,25,İstanbul,5000
+Ayşe,30,Ankara,6000
+Mehmet,35,İzmir,7000
+Fatma,28,Bursa,5500
+Can,32,Antalya,6200
+Zeynep,27,Adana,4800`;
+  }
+
+  function fillJSONExample() {
+    document.getElementById("data_format").value = "json";
+    document.getElementById("data_text").value = `[
+  {"isim": "Ali", "yaş": 25, "şehir": "İstanbul", "maaş": 5000},
+  {"isim": "Ayşe", "yaş": 30, "şehir": "Ankara", "maaş": 6000},
+  {"isim": "Mehmet", "yaş": 35, "şehir": "İzmir", "maaş": 7000},
+  {"isim": "Fatma", "yaş": 28, "şehir": "Bursa", "maaş": 5500},
+  {"isim": "Can", "yaş": 32, "şehir": "Antalya", "maaş": 6200}
+]`;
+  }
+</script>
+{% endblock %}

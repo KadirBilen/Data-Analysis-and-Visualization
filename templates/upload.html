@@ -1,0 +1,79 @@
+{% extends "base.html" %} {% block title %}Dosya Yükle - Veri Analizi
+Platformu{% endblock %} {% block content %}
+<div class="row">
+  <div class="col-lg-8 mx-auto">
+    <div class="card shadow">
+      <div class="card-header bg-primary text-white">
+        <h4 class="mb-0"><i class="fas fa-upload me-2"></i>Dosya Yükle</h4>
+      </div>
+      <div class="card-body">
+        <form method="POST" enctype="multipart/form-data" id="uploadForm">
+          <div class="mb-4">
+            <label for="file" class="form-label">Veri Dosyası Seçin</label>
+            <input
+              type="file"
+              class="form-control"
+              id="file"
+              name="file"
+              accept=".csv,.xlsx,.xls,.json"
+              required
+            />
+            <div class="form-text">
+              Desteklenen formatlar: CSV, Excel (.xlsx, .xls), JSON
+              <br />Maksimum dosya boyutu: 16MB
+            </div>
+          </div>
+
+          <div class="mb-4">
+            <h6>Dosya Önizleme</h6>
+            <div
+              id="filePreview"
+              class="border rounded p-3 bg-light"
+              style="min-height: 100px"
+            >
+              <p class="text-muted mb-0">
+                Dosya seçildikten sonra önizleme burada görünecek
+              </p>
+            </div>
+          </div>
+
+          <div class="d-grid gap-2 d-md-flex justify-content-md-end">
+            <a href="{{ url_for('index') }}" class="btn btn-secondary me-md-2">
+              <i class="fas fa-arrow-left me-2"></i>Geri
+            </a>
+            <button type="submit" class="btn btn-primary" id="submitBtn">
+              <i class="fas fa-chart-line me-2"></i>Analiz Et
+            </button>
+          </div>
+        </form>
+      </div>
+    </div>
+
+    <div class="mt-4">
+      <div class="card">
+        <div class="card-header">
+          <h6 class="mb-0">Dosya Format Örnekleri</h6>
+        </div>
+        <div class="card-body">
+          <div class="row">
+            <div class="col-md-6">
+              <h6>CSV Örneği:</h6>
+              <pre class="bg-light p-2 rounded"><code>isim,yaş,maaş
+Ali,25,5000
+Ayşe,30,6000
+Mehmet,35,7000</code></pre>
+            </div>
+            <div class="col-md-6">
+              <h6>JSON Örneği:</h6>
+              <pre class="bg-light p-2 rounded"><code>[
+  {"isim": "Ali", "yaş": 25, "maaş": 5000},
+  {"isim": "Ayşe", "yaş": 30, "maaş": 6000}
+]</code></pre>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+{% endblock %}
