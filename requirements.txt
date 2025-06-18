@@ -1,6 +1,6 @@
 Flask==3.0.3
 pandas==2.2.3 --only-binary :all:
-numpy==1.26.4
+numpy==1.26.3
 Cython==3.1.2
 matplotlib==3.8.4
 seaborn==0.13.2
